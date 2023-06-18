@@ -47,17 +47,42 @@ router.post('/bills', async (req, res) => {
 
 router.get("/bills",
     async (req,res)=>{
-        Data.find().then((all)=>{
+      
+      const token_no = req.query.token_no;
+  
+      if (!token_no) {
+        res.status(400).json({ error: 'Missing _id parameter' });
+        return;
+      }
 
-            res.status(200).json(all)
-    
-        }).catch((error)=>{
-    
-            res.status(404).send("Error")
-    
-        })
-    })
+    try{
+      const query = { token_no: token_no };
+      const result = await Data.findOne(query);
+   
+      if (!result) {
+        res.status(404).json({ error: 'Document not found' });
+        return;
+      }
+      res.status(200).json(result);
 
+  }catch(error){
+
+    console.error('Error retrieving document:', error);
+    res.status(500).json({ error: 'An error occurred' });
+  
+  }
+
+  })
+
+
+router.get("/all-bills",
+  async (req,res)=>{
+      Data.find().then((all)=>{
+          res.status(200).json(all)
+      }).catch((error)=>{
+          res.status(404).send("Error fetching data")
+      })
+  })
 
 function generateTokenNumber(last_token) {
     const currentDate = moment().format('YYYYMMDD');
