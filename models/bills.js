@@ -1,18 +1,28 @@
 const mongoose = require('mongoose');
  
-const billSchema = new mongoose.Schema({
+const billSchema0 = new mongoose.Schema({
     numbers: [Number],
-    item: String,
-    price: Number,
-    total: Number,
-    no_bags: Number
+    item_name: String,
+    item_price: Number,
+    item_total_weight: Number,
+    item_total: Number,
+    item_no_bags: Number
+})
+
+const billSchema1 = new mongoose.Schema({
+    item_name: String,
+    item_no_bags: Number,
+    item_price: Number,
+    item_total: Number
 })
 
 const billSchema2 = new mongoose.Schema({
-    token_no: String,
+    bill_no: String,
     Fname: String,
-    objectsArray: [billSchema],
-    total: Number,
+    objectsArray: [billSchema0],
+    objectsArray_1: [billSchema1],
+    totalBags: Number,
+    grandTotal: Number,
     labour: Number,
     commision: Number,
     pay: Number

@@ -2,42 +2,84 @@ const express = require('express');
 const router = express.Router();
 const Data = require('../models/bills')
 const moment = require('moment');
-
+ 
 router.post('/bills', async (req, res) => {
     const Fname = String(req.body.Fname)
     const objectsArray = req.body.objectsArray;
-    
+    const objectsArray_1 = req.body.objectsArray_1;
+
     const processedData = objectsArray.map((obj)=>{
       const numbers = obj.numbers
-      const item = String(obj.item)
-      const price = Number(obj.price)
-      const total = numbers.reduce((acc, curr) => acc + curr, 0)*price;
-      const no_bags = numbers.length
+      const item_name = String(obj.item_name)
+      const item_price = Number(obj.item_price)
+      const item_total_weight = numbers.reduce((acc, curr) => acc + curr, 0)
+      const item_total = item_total_weight*item_price;
+      const item_no_bags = numbers.length
 
       return {
-        item: item,
+        item_name: item_name,
         numbers: numbers,
-        price: price,
-        no_bags: no_bags,
-        total: total
+        item_total_weight: item_total_weight,
+        item_price: item_price,
+        item_no_bags: item_no_bags,
+        item_total: item_total
       };
 
     })
+
+
+        
+    const processedData_1 = objectsArray_1.map((obj)=>{
+      const item_name = String(obj.item_name)
+      const item_price = Number(obj.item_price)
+      const item_no_bags = Number(obj.item_no_bags)
+      const item_total = item_no_bags*item_price;
+
+      return {
+        item_name: item_name,
+        item_price: item_price,
+        item_no_bags: item_no_bags,
+        item_total: item_total
+      };
+
+    })
+
+    // console.log(processedData)
+    // console.log(processedData_1)
+    //process.exit()
+      //const totalWeigt = processedData.reduce((acc,curr) => acc + curr.item_no_bags, 0)
     
-      const grandTotal = processedData.reduce((acc, curr) => acc + curr.total, 0);
-      const totalBags = processedData.reduce((acc, curr) => acc + curr.no_bags, 0);
-    
+      const weightTotal = processedData.reduce((acc, curr) => acc + curr.item_total, 0);
+      const totalWeightBags = processedData.reduce((acc, curr) => acc + curr.item_no_bags, 0);
+
+      const packetTotal = processedData_1.reduce((acc,curr) => acc + curr.item_total, 0);
+      const totalPacketsBags = processedData_1.reduce((acc, curr) => acc + curr.item_no_bags, 0);
+      
+      const grandTotal = packetTotal+weightTotal
+      const totalBags = totalWeightBags+totalPacketsBags
+
+
+      // console.log(weightTotal,packetTotal,grandTotal)
+      // console.log(totalWeightBags,totalPacketsBags,totalBags)
+      // process.exit()
+
+
       const labour = totalBags*6
       const commision = grandTotal*0.08
       const pay = grandTotal-labour-commision
       
       const lastEntry = await Data.findOne({}, {}, { sort: { _id: -1 } });
-
-      const token_no=generateTokenNumber(lastEntry.token_no)
-      var newrecord = new Data({token_no:token_no,Fname:Fname,objectsArray:processedData,total: grandTotal,labour:labour,commision:commision,pay:pay})
       
+      // const bill_no="20230620001"
+      const bill_no=generateTokenNumber(lastEntry.bill_no)
+      // var newrecord = new Data({bill_no:bill_no,Fname:Fname,objectsArray:processedData,totalWeigt:totalWeigt,totalBags:totalBags,grandTotal: grandTotal,labour:labour,commision:commision,pay:pay})
+      var newrecord = new Data({bill_no:bill_no,Fname:Fname,objectsArray:processedData,objectsArray_1:processedData_1,totalBags:totalBags,grandTotal: grandTotal,labour:labour,commision:commision,pay:pay})
+      
+      console.log(newrecord)
+      //process.exit()
+
       newrecord.save().then(()=>{
-        res.status(200).send(token_no)
+        res.status(200).send(bill_no)
       }).catch((error)=>{
         res.status(404).send("error")
       })
@@ -48,15 +90,15 @@ router.post('/bills', async (req, res) => {
 router.get("/bills",
     async (req,res)=>{
       
-      const token_no = req.query.token_no;
+      const bill_no = req.query.bill_no;
   
-      if (!token_no) {
+      if (!bill_no) {
         res.status(400).json({ error: 'Missing _id parameter' });
         return;
       }
 
     try{
-      const query = { token_no: token_no };
+      const query = { bill_no: bill_no };
       const result = await Data.findOne(query);
    
       if (!result) {
