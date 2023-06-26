@@ -23,6 +23,8 @@ const billSchema2 = new mongoose.Schema({
     objectsArray_1: [billSchema1],
     totalBags: Number,
     grandTotal: Number,
+    advance: Number,
+    vehicle_charge: Number,
     labour: Number,
     commision: Number,
     pay: Number

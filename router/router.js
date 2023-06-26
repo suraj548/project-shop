@@ -5,10 +5,24 @@ const moment = require('moment');
  
 router.post('/bills', async (req, res) => {
     const Fname = String(req.body.Fname)
+    const advance = Number(req.body.advance)
+    const vehicle_charge = Number(req.body.vehicle_charge)
     const objectsArray = req.body.objectsArray;
     const objectsArray_1 = req.body.objectsArray_1;
 
-    const processedData = objectsArray.map((obj)=>{
+
+    //console.log(objectsArray)
+    let processedData
+    let processedData_1
+    let weightTotal
+    let totalWeightBags
+    let packetTotal
+    let totalPacketsBags
+    let grandTotal
+    let totalBags
+    if(objectsArray!=undefined){
+    if(objectsArray.length>0){
+      processedData = objectsArray.map((obj)=>{
       const numbers = obj.numbers
       const item_name = String(obj.item_name)
       const item_price = Number(obj.item_price)
@@ -26,10 +40,16 @@ router.post('/bills', async (req, res) => {
       };
 
     })
+    weightTotal = processedData.reduce((acc, curr) => acc + curr.item_total, 0);
+    totalWeightBags = processedData.reduce((acc, curr) => acc + curr.item_no_bags, 0);
+
+  }
+}
 
 
-        
-    const processedData_1 = objectsArray_1.map((obj)=>{
+    if(objectsArray_1!=undefined){
+    if(objectsArray_1.length>0){
+      processedData_1 = objectsArray_1.map((obj)=>{
       const item_name = String(obj.item_name)
       const item_price = Number(obj.item_price)
       const item_no_bags = Number(obj.item_no_bags)
@@ -43,45 +63,44 @@ router.post('/bills', async (req, res) => {
       };
 
     })
+    packetTotal=processedData_1.reduce((acc,curr) => acc + curr.item_total, 0);
+    totalPacketsBags=processedData_1.reduce((acc, curr) => acc + curr.item_no_bags, 0);
+  }
+}
 
-    // console.log(processedData)
-    // console.log(processedData_1)
-    //process.exit()
-      //const totalWeigt = processedData.reduce((acc,curr) => acc + curr.item_no_bags, 0)
-    
-      const weightTotal = processedData.reduce((acc, curr) => acc + curr.item_total, 0);
-      const totalWeightBags = processedData.reduce((acc, curr) => acc + curr.item_no_bags, 0);
-
-      const packetTotal = processedData_1.reduce((acc,curr) => acc + curr.item_total, 0);
-      const totalPacketsBags = processedData_1.reduce((acc, curr) => acc + curr.item_no_bags, 0);
+  // console.log(objectsArray.length)
+  // console.log(objectsArray_1.length)
+  if(objectsArray===undefined){
+    grandTotal = packetTotal
+    totalBags = totalPacketsBags
+  }
+  else if(objectsArray_1===undefined){
+    grandTotal = weightTotal
+    totalBags = totalWeightBags
+  }
+  else{
+    grandTotal = packetTotal+weightTotal
+    totalBags = totalPacketsBags+totalWeightBags
+  }
       
-      const grandTotal = packetTotal+weightTotal
-      const totalBags = totalWeightBags+totalPacketsBags
-
-
-      // console.log(weightTotal,packetTotal,grandTotal)
-      // console.log(totalWeightBags,totalPacketsBags,totalBags)
-      // process.exit()
-
-
       const labour = totalBags*6
       const commision = grandTotal*0.08
-      const pay = grandTotal-labour-commision
+      const pay = grandTotal-labour-commision-advance-vehicle_charge
       
       const lastEntry = await Data.findOne({}, {}, { sort: { _id: -1 } });
+      const bill_no=generateTokenNumber(lastEntry.bill_no)
       
       // const bill_no="20230620001"
-      const bill_no=generateTokenNumber(lastEntry.bill_no)
-      // var newrecord = new Data({bill_no:bill_no,Fname:Fname,objectsArray:processedData,totalWeigt:totalWeigt,totalBags:totalBags,grandTotal: grandTotal,labour:labour,commision:commision,pay:pay})
-      var newrecord = new Data({bill_no:bill_no,Fname:Fname,objectsArray:processedData,objectsArray_1:processedData_1,totalBags:totalBags,grandTotal: grandTotal,labour:labour,commision:commision,pay:pay})
       
-      console.log(newrecord)
-      //process.exit()
+      var newrecord = new Data({bill_no:bill_no,Fname:Fname,advance:advance,vehicle_charge:vehicle_charge,objectsArray:processedData,objectsArray_1:processedData_1,totalBags:totalBags,grandTotal: grandTotal,labour:labour,commision:commision,pay:pay})
 
+      // console.log(newrecord)
+      
       newrecord.save().then(()=>{
         res.status(200).send(bill_no)
       }).catch((error)=>{
-        res.status(404).send("error")
+        console.log(error)
+        res.send(error)
       })
 
 
